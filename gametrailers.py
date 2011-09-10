@@ -34,7 +34,23 @@ class SearchResult:
         self.page = None
         
     def __repr__(self):
-        return "<SearchResult: %s: %s>" % (self.id, self.title)
+        return repr([self.id, \
+                    self.title, \
+                    self.link, \
+                    self.boxart, \
+                    self.score, \
+                    self.votes, \
+                    self.media_count, \
+                    self.download_count, \
+                    self.systems, \
+                    self.release_date, \
+                    self.genres, \
+                    self.developer, \
+                    self.developer_link, \
+                    self.publisher, \
+                    self.publisher_link, \
+                    self.index, \
+                    self.page])
         
 class GT:
     @staticmethod
@@ -79,7 +95,7 @@ class GT:
                 
             bottom = row.find("div", "gamepage_content_row_info_bottom")
             if bottom:
-                match = re.search("Media: (?P<media>[^ ]+) Downloads: (?P<downloads>[^ ]+)", bottom.text.strip())
+                match = re.search("Media:(?P<media>[0-9\,]+)Downloads:(?P<downloads>[0-9\,]+)", bottom.text.strip())
                 if match:
                     res.media_count = int(match.group("media").strip().replace(",", ""))
                     res.download_count = match.group("downloads").strip().replace(",", "")
