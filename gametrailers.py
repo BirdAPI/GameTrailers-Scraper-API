@@ -18,9 +18,23 @@ class SearchResult:
         self.id = None
         self.title = None
         self.link = None
+        self.boxart = None
+        self.score = None
+        self.votes = None
+        self.media_count = None
+        self.download_count = None
+        self.systems = None
+        self.release_date = None
+        self.genres = None
+        self.developer = None
+        self.developer_link = None
+        self.publisher = None
+        self.publisher_link = None
+        self.index = None
+        self.page = None
         
     def __repr__(self):
-        return "<SearchResult: %s>" % (self.title)
+        return "<SearchResult: %s: %s>" % (self.id, self.title)
         
 class GT:
     @staticmethod
@@ -50,8 +64,10 @@ class GT:
                 a = row.find("a")
                 if a:
                     res.link = "http://www.gametrailers.com/" + a["href"]
+                    res.id = res.link[res.link.rfind("/")+1 : res.link.rfind(".html")]
         
             details = row.find("div", "gamepage_content_row_text")
+            process_details(res, details)
             
             score = row.find("div", "gamepage_content_score_number")
             if score:
@@ -78,6 +94,42 @@ class GT:
     def get_info(id):
         return None
 
+def process_details(res, details):
+    imgs = details.findAll("img")
+    systems = []
+    for img in imgs:
+        match = re.search("images/plat_(?P<system>.+)_default.gif", img["src"])
+        if match:
+            systems.append(match.group("system").strip())
+    res.systems = systems
+    
+    txt = str(details).strip()
+    txt = re.sub("<b>([^:]+):</b>", '<div class="\\1">', txt)
+    txt = txt.replace("</div>", "</div></div>")
+    txt = txt.replace("<br />", "</div>")
+    
+    soup2 = BeautifulSoup(txt)
+    divs = soup2.findAll("div")
+    for div in divs:
+        type = div["class"].strip()
+        value = div.text.strip()
+        process_game_detail(res, div, type, value)
+
+def process_game_detail(res, div, type, value):
+    a = div.find("a")
+    if type == "Release Date":
+        res.release_date = value
+    elif type == "Genres":
+        res.genres = value
+    elif type == "Developer":
+        res.developer = value
+        if a and a["href"] and a["href"] != "":
+            res.developer_link = a["href"].strip()
+    elif type == "Publisher":
+        res.publisher = value
+        if a and a["href"] and a["href"] != "":
+            res.publisher_link = a["href"].strip()
+        
 def get_html(url):
     try:
         request = urllib2.Request(url)
