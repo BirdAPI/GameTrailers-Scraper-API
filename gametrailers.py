@@ -1,17 +1,79 @@
-from datetime import datetime
 from BeautifulSoup import BeautifulSoup
-import json
 import urllib2
 import sqlite3
 import sys
 import re
-import os
 
 class GTInfo:
     def __init__(self):
         self.id = None
+        self.link = None
         self.title = None
         self.system = None
+        self.boxart = None
+        self.release_date = None
+        self.summary = None
+        self.systems = None
+        self.genres = None
+        self.developer = None
+        self.developer_link = None
+        self.publisher = None
+        self.publisher_link = None
+        self.gt_score = None
+        self.review_link = None
+        self.user_score = None
+        self.user_count = None
+        self.esrb = None
+        self.esrb_reason = None
+        self.official_site = None
+        self.banner_image = None
+
+    def print_me(self):
+        print 'id: "%s"' % str(self.id)
+        print 'link: "%s"' % str(self.link)
+        print 'title: "%s"' % str(self.title)
+        print 'system: "%s"' % str(self.system)
+        print 'boxart: "%s"' % str(self.boxart)
+        print 'release_date: "%s"' % str(self.release_date)
+        print 'summary: "%s"' % str(self.summary)
+        print 'systems: "%s"' % str(self.systems)
+        print 'genres: "%s"' % str(self.genres)
+        print 'developer: "%s"' % str(self.developer)
+        print 'developer_link: "%s"' % str(self.developer_link)
+        print 'publisher: "%s"' % str(self.publisher)
+        print 'publisher_link: "%s"' % str(self.publisher_link)
+        print 'gt_score: "%s"' % str(self.gt_score)
+        print 'review_link: "%s"' % str(self.review_link)
+        print 'user_score: "%s"' % str(self.user_score)
+        print 'user_count: "%s"' % str(self.user_count)
+        print 'esrb: "%s"' % str(self.esrb)
+        print 'esrb_reason: "%s"' % str(self.esrb_reason)
+        print 'official_site: "%s"' % str(self.official_site)
+        print 'banner_image: "%s"' % str(self.banner_image) 
+        
+    def __repr__(self):
+        return repr([self.id, \
+            self.link, \
+            self.title, \
+            self.system, \
+            self.boxart, \
+            self.release_date, \
+            self.summary, \
+            self.systems, \
+            self.genres, \
+            self.developer, \
+            self.developer_link, \
+            self.publisher, \
+            self.publisher_link, \
+            self.gt_score, \
+            self.review_link, \
+            self.user_score, \
+            self.user_count, \
+            self.esrb, \
+            self.esrb_reason, \
+            self.official_site, \
+            self.banner_image])      
+        
         
 class SearchResult:
     def __init__(self):
@@ -107,9 +169,68 @@ class GT:
         return allresults
         
     @staticmethod
-    def get_info(id):
-        return None
+    def get_info(id, system, user_count=None):
+        info = GTInfo()
+        info.id = id
+        info.link = "http://www.gametrailers.com/game/%s.html" % id   
+        info.system = system
+        info.user_count = user_count
+        
+        html = get_html(info.link)
+        if not html:
+            return None
+        soup = BeautifulSoup(html)
+        
+        title = soup.find("h1", "GameTitle")
+        if title:
+            info.title = title.text.strip()
+        
+        description = soup.find("div", "Description")
+        if description:
+            info.summary = description.text.strip()
+            
+        gametop_container = soup.find("div", "gametop_container")
+        if gametop_container:
+            img = gametop_container.find("img")
+            if img:
+                info.banner_image = img["src"]
+        
+        gamepage_boxart = soup.find("img", "gamepage_boxart")
+        if gamepage_boxart:
+            info.boxart = gamepage_boxart["src"]
+        
+        general_info = soup.find("div", "gamepage_gameinfo")
+        if general_info:
+            process_general_info(info, general_info)
+        
+        ratings = soup.findAll("div", "RatingWrapper")
+        if ratings and len(ratings) == 2:
+            info.gt_score = ratings[0].text.strip()
+            info.user_score = ratings[1].text.strip()
+        
+        review = soup.find("a", "WatchReview")
+        if review:
+            info.review_link = "http://www.gametrailers.com" + review["href"]
+        
+        return info
 
+def process_general_info(info, general_info):
+    systems = []
+    platforms = general_info.findAll("a", "gamepage_platform")
+    for platform in platforms:
+        match = re.search("gamepage_platform_(?P<plat>[^ ]+)", platform["class"])
+        if match:
+            systems.append(match.group("plat").strip())
+    info.systems = systems
+    
+    bolds = general_info.findAll("span", "gamepage_gameinfo_bold_text")
+    normals = general_info.findAll("span", "gamepage_gameinfo_normal_text")
+    
+    for i in range(len(bolds)):
+        type = bolds[i].text.replace(":", "").strip()
+        value = normals[i].text.strip()
+        process_game_detail(info, normals[i], type, value)
+    
 def process_details(res, details):
     imgs = details.findAll("img")
     systems = []
@@ -145,7 +266,17 @@ def process_game_detail(res, div, type, value):
         res.publisher = value
         if a and a["href"] and a["href"] != "":
             res.publisher_link = a["href"].strip()
-        
+    elif type == "Gamesite":
+        if a and a["href"] and a["href"] != "":
+            res.official_site = a["href"].strip()
+    elif type == "ESRB":
+        match = re.search("(?P<esrb>[^&]+)&nbsp;\((?P<reason>[^\)]+)\)", value)
+        if match:
+            res.esrb = match.group("esrb").strip()
+            res.esrb_reason = match.group("reason").strip()
+        else:
+            res.esrb = value
+            
 def get_html(url):
     try:
         request = urllib2.Request(url)
@@ -164,7 +295,8 @@ def main():
         results = GT.search(sys.argv[1])
         for result in results:
             print result, "\n"
-            print GT.get_info(result.id), "\n"
+            GT.get_info(result.id, result.systems[0], result.votes).print_me()
+            print ""
     
 if __name__ == "__main__":
     main()
