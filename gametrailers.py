@@ -1,4 +1,5 @@
 from BeautifulSoup import BeautifulSoup
+from pprint import pprint
 import urllib2
 import sqlite3
 import sys
@@ -26,54 +27,7 @@ class GTInfo:
         self.esrb = None
         self.esrb_reason = None
         self.official_site = None
-        self.banner_image = None
-
-    def print_me(self):
-        print 'id: "%s"' % str(self.id)
-        print 'link: "%s"' % str(self.link)
-        print 'title: "%s"' % str(self.title)
-        print 'system: "%s"' % str(self.system)
-        print 'boxart: "%s"' % str(self.boxart)
-        print 'release_date: "%s"' % str(self.release_date)
-        print 'summary: "%s"' % str(self.summary)
-        print 'systems: "%s"' % str(self.systems)
-        print 'genres: "%s"' % str(self.genres)
-        print 'developer: "%s"' % str(self.developer)
-        print 'developer_link: "%s"' % str(self.developer_link)
-        print 'publisher: "%s"' % str(self.publisher)
-        print 'publisher_link: "%s"' % str(self.publisher_link)
-        print 'gt_score: "%s"' % str(self.gt_score)
-        print 'review_link: "%s"' % str(self.review_link)
-        print 'user_score: "%s"' % str(self.user_score)
-        print 'user_count: "%s"' % str(self.user_count)
-        print 'esrb: "%s"' % str(self.esrb)
-        print 'esrb_reason: "%s"' % str(self.esrb_reason)
-        print 'official_site: "%s"' % str(self.official_site)
-        print 'banner_image: "%s"' % str(self.banner_image) 
-        
-    def __repr__(self):
-        return repr([self.id, \
-            self.link, \
-            self.title, \
-            self.system, \
-            self.boxart, \
-            self.release_date, \
-            self.summary, \
-            self.systems, \
-            self.genres, \
-            self.developer, \
-            self.developer_link, \
-            self.publisher, \
-            self.publisher_link, \
-            self.gt_score, \
-            self.review_link, \
-            self.user_score, \
-            self.user_count, \
-            self.esrb, \
-            self.esrb_reason, \
-            self.official_site, \
-            self.banner_image])      
-        
+        self.banner_image = None  
         
 class SearchResult:
     def __init__(self):
@@ -94,25 +48,6 @@ class SearchResult:
         self.publisher_link = None
         self.index = None
         self.page = None
-        
-    def __repr__(self):
-        return repr([self.id, \
-                    self.title, \
-                    self.link, \
-                    self.boxart, \
-                    self.score, \
-                    self.votes, \
-                    self.media_count, \
-                    self.download_count, \
-                    self.systems, \
-                    self.release_date, \
-                    self.genres, \
-                    self.developer, \
-                    self.developer_link, \
-                    self.publisher, \
-                    self.publisher_link, \
-                    self.index, \
-                    self.page])
         
 class GT:
     @staticmethod
@@ -294,8 +229,9 @@ def main():
     if len(sys.argv) == 2:
         results = GT.search(sys.argv[1])
         for result in results:
-            print result, "\n"
-            GT.get_info(result.id, result.systems[0], result.votes).print_me()
+            pprint(vars(result))
+            print ""
+            pprint(vars(GT.get_info(result.id, result.systems[0], result.votes)))
             print ""
     
 if __name__ == "__main__":
