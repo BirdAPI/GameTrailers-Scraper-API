@@ -27,7 +27,7 @@ class GTInfo:
         self.esrb = None
         self.esrb_reason = None
         self.official_site = None
-        self.banner_image = None  
+        self.banner_image = None
         
 class SearchResult:
     def __init__(self):
